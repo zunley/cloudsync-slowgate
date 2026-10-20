@@ -1,0 +1,7 @@
+# 构建产物
+*.so
+tests/caller
+
+# 备份与日志
+*.bak
+*.log
