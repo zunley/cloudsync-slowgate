@@ -1,10 +1,10 @@
 CC      ?= gcc
 CFLAGS  ?= -O2 -Wall -Wextra
-SO       = cs_lowspeed.so
+SO       = slowgate.so
 
 all: $(SO)
 
-$(SO): cs_lowspeed.c
+$(SO): slowgate.c
 	$(CC) $(CFLAGS) -fPIC -shared -Wl,-z,defs -o $@ $< -ldl
 
 test: $(SO)

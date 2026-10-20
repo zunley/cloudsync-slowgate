@@ -1,4 +1,4 @@
-# cloudsync-lowspeed
+# cloudsync-slowgate
 
 关闭 Synology CloudSync 上传时的 libcurl 低速保护，修复大文件被
 `Operation too slow ... 300 seconds` 反复中断、从 0 重传的死循环。
@@ -35,11 +35,11 @@ curl 规定 limit 为 0 时整套低速检查不执行。其余选项按 curl.h 
 ## 构建
 
 ```bash
-make          # 生成 cs_lowspeed.so（gcc, x86_64）
+make          # 生成 slowgate.so（gcc, x86_64）
 make test     # 变参转发自测：19/20 被改写为 0，其余选项原样通过
 ```
 
-部署到老系统前检查符号版本，`readelf -V cs_lowspeed.so` 中的 `GLIBC_*`
+部署到老系统前检查符号版本，`readelf -V slowgate.so` 中的 `GLIBC_*`
 不能超过目标机 glibc。
 
 ## 部署
@@ -47,7 +47,7 @@ make test     # 变参转发自测：19/20 被改写为 0，其余选项原样�
 需要 root，只影响 CloudSync 一个进程。
 
 ```bash
-scp cs_lowspeed.so <host>:/tmp/
+scp slowgate.so <host>:/tmp/
 ssh <host> 'sudo bash deploy.sh'
 ```
 
@@ -64,7 +64,7 @@ sudo synopkg restart CloudSync
 
 ## 验证
 
-1. `/proc/<pid>/maps` 中出现 `cs_lowspeed.so`；
+1. `/proc/<pid>/maps` 中出现 `slowgate.so`；
 2. 日志不再产生新的 `Operation too slow`；
 3. 单个 PUT 耗时超过 5m30s 且状态码为 201/204（补丁前必然停在 5m20s/5m30s + 405）。
 
@@ -76,7 +76,7 @@ bash watch.sh /path/to/sync/dir 5
 
 ## 注意
 
-- 语义是**彻底关闭**低速保护。若想留一道保险，改 `cs_lowspeed.c` 让 `LOW_SPEED_TIME`
+- 语义是**彻底关闭**低速保护。若想留一道保险，改 `slowgate.c` 让 `LOW_SPEED_TIME`
   取有限值（如 1800）再重编即可。
 - 套件升级会覆盖 `target/`，wrapper 与库需重新部署。
 - 对 `curl_easy_setopt` 的变参转发依赖 curl.h 的选项编码约定，curl 大版本升级时请复查。

@@ -5,14 +5,14 @@
 set -e
 cd "$(dirname "$0")"
 ROOT=..
-[ -f "$ROOT/cs_lowspeed.so" ] || { echo "先 make 生成 cs_lowspeed.so"; exit 1; }
+[ -f "$ROOT/slowgate.so" ] || { echo "先 make 生成 slowgate.so"; exit 1; }
 
 gcc -O1 -fPIC -shared -o libfakecurl.so fake_curl.c
 gcc -o caller caller.c -L. -Wl,-rpath,. -lfakecurl
 
 # 2>&1：shim 的自报行写 stderr
 plain=$(./caller 2>&1)
-pre=$(LD_PRELOAD=../cs_lowspeed.so ./caller 2>&1)
+pre=$(LD_PRELOAD=../slowgate.so ./caller 2>&1)
 
 echo "--- 不注入 ---";  echo "$plain"
 echo "--- 注入 shim ---"; echo "$pre"
@@ -22,7 +22,7 @@ fail=0
 need() { grep -qF "$1" <<<"$pre" || { echo "FAIL: 注入后缺少 [$1]"; fail=1; }; }
 
 grep -qF "opt=19 LONG  value=1" <<<"$plain" || { echo "FAIL: 测试框架未收到原始值"; fail=1; }
-need "cs_lowspeed: low-speed guard disabled"
+need "slowgate: low-speed guard disabled"
 need "opt=19 LONG  value=0"
 need "opt=20 LONG  value=0"
 need "opt=13 LONG  value=300"

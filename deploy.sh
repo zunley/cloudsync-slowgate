@@ -1,14 +1,14 @@
 #!/bin/bash
 # cloudsync-lowspeed 部署脚本（需 root）
 # 做三件事：装库 → 用 wrapper 占位真二进制并在 exec 时注入 LD_PRELOAD → 重启并验证
-# 前置：把 cs_lowspeed.so 放到 /tmp
+# 前置：把 slowgate.so 放到 /tmp
 set -e
 
 BIN=/var/packages/CloudSync/target/sbin/syno-cloud-syncd
 REAL=${BIN}.real
-SO_SRC=/tmp/cs_lowspeed.so
-SO_DST=/var/packages/CloudSync/target/lib/cs_lowspeed.so
-LOG=/tmp/cs_lowspeed.log
+SO_SRC=/tmp/slowgate.so
+SO_DST=/var/packages/CloudSync/target/lib/slowgate.so
+LOG=/tmp/slowgate.log
 
 [ "$(id -u)" = "0" ] || { echo "请用 sudo 运行"; exit 1; }
 [ -f "$SO_SRC" ] || { echo "缺少 $SO_SRC（先 scp 上来）"; exit 1; }
@@ -25,8 +25,8 @@ echo "--- 写 wrapper ---"
 cat > "$BIN" <<'WRAP'
 #!/bin/sh
 # cloudsync-lowspeed wrapper（勿删：真二进制在同目录 syno-cloud-syncd.real）
-export LD_PRELOAD="/var/packages/CloudSync/target/lib/cs_lowspeed.so"
-exec /var/packages/CloudSync/target/sbin/syno-cloud-syncd.real "$@" 2>>/tmp/cs_lowspeed.log
+export LD_PRELOAD="/var/packages/CloudSync/target/lib/slowgate.so"
+exec /var/packages/CloudSync/target/sbin/syno-cloud-syncd.real "$@" 2>>/tmp/slowgate.log
 WRAP
 chmod 755 "$BIN"
 : > "$LOG"
@@ -40,8 +40,8 @@ PID=$(cat /var/run/syno-cloud-syncd.pid 2>/dev/null)
 echo "--- daemon pid = ${PID:-未启动} ---"
 [ -n "$PID" ] && ps -p "$PID" -o pid,lstart,args
 
-if [ -n "$PID" ] && grep -q "cs_lowspeed" "/proc/$PID/maps"; then
-    echo "OK: shim 已注入 daemon（maps 里能看到 cs_lowspeed.so）"
+if [ -n "$PID" ] && grep -q "slowgate" "/proc/$PID/maps"; then
+    echo "OK: shim 已注入 daemon（maps 里能看到 slowgate.so）"
     exit 0
 fi
 

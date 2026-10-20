@@ -1,4 +1,4 @@
-# 原理：cs_lowspeed 如何生效
+# 原理：slowgate 如何生效
 
 一句话：**在运行时把 `curl_easy_setopt` 这个函数劫道到我们自己的实现里，改掉其中两个参数。**
 CloudSync 闭源、libcurl 是系统库，两边都不能改，所以走的是 Linux 动态链接的一个正规特性。
@@ -54,7 +54,7 @@ syno-cloud-syncd ──调用──▶ curl_easy_setopt(h, CURLOPT_LOW_SPEED_LIM
 
 启动链：`start.sh → starter →（exec）wrapper →（exec）真 daemon`，中间谁清洗环境都拦不住。
 
-## 4. cs_lowspeed.c 逐段
+## 4. slowgate.c 逐段
 
 ### 4.1 拿到原厂实现的地址
 

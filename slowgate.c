@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 /*
- * cs_lowspeed.so — 关闭 libcurl 的低速保护（CURLOPT_LOW_SPEED_LIMIT / _TIME）
+ * slowgate.so — 关闭 libcurl 的低速保护（CURLOPT_LOW_SPEED_LIMIT / _TIME）
  *
  * 用于 WebDAV 客户端（如 Synology CloudSync）上传时，服务端先收完整份文件再转传上游，
  * 导致「收完 → 回响应」之间出现长静默、被 curl 判为传输死亡（curl 28, Operation too slow）。
@@ -49,8 +49,9 @@ int curl_easy_setopt(CURL *h, CURLoption opt, ...)
         (void)va_arg(ap, long);
         lazy();
         if (!announced) {
+            static const char msg[] = "slowgate: low-speed guard disabled\n";
             announced = 1;
-            (void)!write(2, "cs_lowspeed: low-speed guard disabled\n", 38);
+            (void)!write(2, msg, sizeof(msg) - 1);
         }
         rc = real_setopt(h, opt, 0L);
     } else if (type == 3) {                 /* OFF_T: curl_off_t */
