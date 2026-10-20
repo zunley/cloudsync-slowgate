@@ -22,16 +22,15 @@ DSM 与 CloudSync 均未暴露该超时的配置项：UI、`daemon.conf`、配�
 
 ## 做法
 
-LD_PRELOAD 注入一个小动态库，拦截 `curl_easy_setopt`，把 `CURLOPT_LOW_SPEED_LIMIT`（19）
-与 `CURLOPT_LOW_SPEED_TIME`（20）改写为 0——curl 规定 limit 为 0 时整套低速检查不执行。
-其余选项按 curl.h 的编码约定（选项值 / 10000 决定参数类型）原样转发。
+用 `LD_PRELOAD` 把一个小动态库注入守护进程，拦截 `curl_easy_setopt`，把
+`CURLOPT_LOW_SPEED_LIMIT`（19）与 `CURLOPT_LOW_SPEED_TIME`（20）改写为 0——
+curl 规定 limit 为 0 时整套低速检查不执行。其余选项按 curl.h 的编码约定原样转发。
 
 只影响被注入的这一个进程；上传速率、上传逻辑、服务端行为都不变。
 它不会变快，只是不再被判定死亡。
 
-> 不能简单地在 `start.sh` 里 `export LD_PRELOAD`：包的 starter 在 exec 守护进程时
-> 不透传环境变量（实测拿不到）。因此部署时用一个 wrapper 脚本占位真二进制，
-> 由 wrapper 在 exec 当刻自己设置环境。
+为什么不能直接 `export LD_PRELOAD`、wrapper 在这条链路里的作用、变参转发为什么必须
+知道类型宽度，详见 [docs/how-it-works.md](docs/how-it-works.md)。
 
 ## 构建
 
